@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ARC bot</title>
+  <meta name="theme-color" content="#ffffff" />
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --raised: #eef2fa;
+      --fg: #0b1530;
+      --muted: #5b6785;
+      --line: #e1e7f2;
+      --brand: #1f4bff;
+      --brand-2: #5b3df5;
+      --ink: #ffffff;
+      --up: #0e9f6e;
+      --down: #e5484d;
+      --shadow: 0 1px 2px rgba(11,21,48,.04), 0 8px 24px rgba(11,21,48,.06);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.45;
+    }
+    button, summary { cursor: pointer; font: inherit; color: inherit; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    main { max-width: 32rem; margin: 0 auto; padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem calc(5rem + env(safe-area-inset-bottom, 0px)); }
+    .mono { font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1.25rem; }
+    .logo { display: flex; align-items: center; gap: .6rem; }
+    .logo svg.lg { width: 2.25rem; height: 2.25rem; flex: none; }
+    .brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; margin: 0; }
+    .brand i { font-style: normal; color: var(--brand); }
+    h1 { font-size: 1.85rem; line-height: 1.15; letter-spacing: -0.02em; margin: .25rem 0 0; text-wrap: balance; }
+    h2 { font-size: 1rem; margin: 0; letter-spacing: -0.005em; }
+    .muted { color: var(--muted); }
+    .card { margin-top: .9rem; background: var(--surface); border: 1px solid var(--line); border-radius: 1.1rem; padding: 1.1rem; box-shadow: var(--shadow); }
+    .hero { background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%); color: #fff; border: 0; }
+    .hero .muted { color: rgba(255,255,255,.78); }
+    .hero .big { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; margin: .2rem 0 0; font-variant-numeric: tabular-nums; }
+    .hero .chip { display: inline-block; margin-top: .6rem; padding: .25rem .65rem; border-radius: 999px; background: rgba(255,255,255,.18); font-size: .8rem; font-weight: 600; }
+    .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: .9rem; }
+    .tiles .card { margin: 0; padding: .9rem 1rem; }
+    .tiles .k { font-size: .8rem; color: var(--muted); margin: 0; }
+    .tiles .v { font-size: 1.25rem; font-weight: 700; margin: .15rem 0 0; font-variant-numeric: tabular-nums; }
+    label { display: block; margin-bottom: .85rem; }
+    label span, .lbl { display: block; margin-bottom: .3rem; color: var(--muted); font-size: .85rem; font-weight: 500; }
+    input:not([type="checkbox"]) {
+      width: 100%; height: 3.1rem; border-radius: .8rem; border: 1px solid var(--line);
+      background: var(--bg); color: var(--fg); padding: 0 .9rem; font-size: 1rem;
+    }
+    input:not([type="checkbox"]):focus { border-color: var(--brand); background: #fff; outline: 3px solid rgba(31,75,255,.14); outline-offset: 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+    .sym { height: 3.6rem; border-radius: .8rem; border: 1px solid var(--line); background: var(--surface); text-align: left; padding: 0 .85rem; }
+    .sym.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .sym small { display: block; font-size: .75rem; color: var(--muted); }
+    .sym.on small { color: rgba(255,255,255,.85); }
+    .check { display: flex; gap: .75rem; align-items: flex-start; border: 1px solid var(--line); background: var(--bg); border-radius: .8rem; padding: .8rem; margin-top: 1rem; }
+    .check input { margin-top: .25rem; width: 1.15rem; height: 1.15rem; accent-color: var(--brand); }
+    .go, .primary {
+      height: 3.1rem; width: 100%; border: 0; border-radius: 999px; background: var(--brand); color: #fff;
+      font-weight: 600; margin-top: 1rem; box-shadow: 0 6px 16px rgba(31,75,255,.28);
+    }
+    .err { color: var(--down); font-size: .875rem; }
+    .row { display: flex; justify-content: space-between; gap: .75rem; align-items: flex-start; }
+    .pill { border-radius: 999px; padding: .4rem .8rem; font-size: .72rem; font-weight: 700; letter-spacing: .04em; }
+    .pill.on { background: rgba(14,159,110,.12); color: var(--up); }
+    .pill.off { background: var(--raised); color: var(--muted); }
+    .price { font-size: 1.75rem; font-weight: 700; margin: .25rem 0 0; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .up { color: var(--up); }
+    .down { color: var(--down); }
+    .track { position: relative; height: .7rem; border-radius: 999px; background: var(--raised); margin-top: 1.1rem; }
+    .band { position: absolute; top: 0; bottom: 0; }
+    .band.l { left: 0; background: rgba(229,72,77,.28); border-radius: 999px 0 0 999px; }
+    .band.r { right: 0; background: rgba(14,159,110,.28); border-radius: 0 999px 999px 0; }
+    .needle { position: absolute; top: 50%; width: 4px; height: 1.3rem; background: var(--fg); border-radius: 999px; transform: translate(-50%, -50%); }
+    .stat { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
+    .btns { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .btns button { height: 2.75rem; border-radius: 999px; padding: 0 1.2rem; }
+    .ghost { background: var(--surface); border: 1px solid var(--line); font-weight: 500; }
+    svg.chart { width: 100%; height: 8rem; display: block; margin-top: .5rem; }
+    ul { list-style: none; margin: .5rem 0 0; padding: 0; }
+    li { display: flex; justify-content: space-between; gap: .75rem; padding: .8rem 0; border-top: 1px solid var(--line); }
+    .note { padding: .35rem 0; border: 0; display: block; font-size: .875rem; }
+    pre { max-height: 16rem; overflow: auto; background: var(--bg); border-radius: .7rem; padding: .8rem; color: var(--muted); font-size: .75rem; }
+    .linkish { background: none; border: 0; color: var(--muted); height: 2.75rem; padding: 0; text-decoration: underline; }
+    .steps { display: flex; gap: .4rem; margin: .2rem 0 1rem; }
+    .steps b { flex: 1; height: .3rem; border-radius: 999px; background: var(--line); }
+    .steps b.on { background: var(--brand); }
+    .qr { display: block; margin: 1rem auto .5rem; width: 12.5rem; height: 12.5rem; padding: .7rem; background: #fff; border: 1px solid var(--line); border-radius: 1rem; }
+    .addr { word-break: break-all; background: var(--bg); border: 1px solid var(--line); border-radius: .8rem; padding: .8rem; font-size: .85rem; margin: .5rem 0 0; }
+    .kv { display: flex; justify-content: space-between; gap: .75rem; padding: .55rem 0; border-top: 1px solid var(--line); font-size: .9rem; }
+    .kv:first-of-type { border-top: 0; }
+    .ok { color: var(--up); font-size: .9rem; font-weight: 600; }
+    .warn { background: #fff7e6; border: 1px solid #ffe2a8; color: #7a5200; border-radius: .8rem; padding: .7rem .8rem; font-size: .85rem; margin-top: .9rem; }
+    .spin { width: 3rem; height: 3rem; border-radius: 50%; border: 4px solid var(--raised); border-top-color: var(--brand); animation: sp 1s linear infinite; margin: 1.5rem auto 1rem; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    .syncrow { display: flex; gap: .6rem; align-items: center; padding: .5rem 0; font-size: .95rem; }
+    .dot { width: .7rem; height: .7rem; border-radius: 50%; background: var(--line); flex: none; }
+    .dot.on { background: var(--up); }
+    .foot { text-align: center; color: var(--muted); font-size: .75rem; margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+  <script>
+    const SYMBOLS = [
+      { id: "EURUSD", label: "Euro / Dollar", digits: 5, tickSize: 0.00001, tickValue: 1, start: 1.0864, vol: 0.00028, spread: 0.00012 },
+      { id: "GBPUSD", label: "Sterling / Dollar", digits: 5, tickSize: 0.00001, tickValue: 1, start: 1.2712, vol: 0.00036, spread: 0.00014 },
+      { id: "USDZAR", label: "Dollar / Rand", digits: 5, tickSize: 0.00001, tickValue: 0.055, start: 17.842, vol: 0.014, spread: 0.0018 },
+      { id: "XAUUSD", label: "Gold", digits: 2, tickSize: 0.01, tickValue: 1, start: 2648.3, vol: 1.85, spread: 0.28 }
+    ];
+    const KEY = "arcbot.v1";
+    const BAR = 15 * 60 * 1000;
+    let session = null;
+    let timer = null;
+    let draft = { login: "", server: "", symbol: "EURUSD", live: false };
+    const DEPOSIT_ADDRESS = "0x971a6c28b92c4a52f50e1bf6829e8b184bb2bd6e";
+    const USDT_BSC = "0x55d398326f99059ff775485246999027b3197955";
+    const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+    const MIN_DEPOSIT = 100;
+    const MIN_CONFIRMS = 12;
+    const RPCS = ["https://bsc-dataseed.binance.org", "https://bsc-dataseed1.defibit.io", "https://bsc-rpc.publicnode.com"];
+    const FLOW_KEY = "arcbot.flow.v1", CREDIT_KEY = "arcbot.credit.v1", USED_KEY = "arcbot.txs.v1";
+    const QR_N = 29;
+    const QR_PATH = "M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM9 0h1v1h-1zM10 0h1v1h-1zM12 0h1v1h-1zM16 0h1v1h-1zM19 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM25 0h1v1h-1zM26 0h1v1h-1zM27 0h1v1h-1zM28 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM13 1h1v1h-1zM15 1h1v1h-1zM18 1h1v1h-1zM20 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM25 2h1v1h-1zM26 2h1v1h-1zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM15 3h1v1h-1zM17 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM25 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM14 4h1v1h-1zM16 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM26 4h1v1h-1zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM15 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM27 6h1v1h-1zM28 6h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM15 7h1v1h-1zM16 7h1v1h-1zM18 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM23 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM0 9h1v1h-1zM1 9h1v1h-1zM5 9h1v1h-1zM8 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM22 9h1v1h-1zM24 9h1v1h-1zM25 9h1v1h-1zM28 9h1v1h-1zM0 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM9 10h1v1h-1zM13 10h1v1h-1zM15 10h1v1h-1zM17 10h1v1h-1zM20 10h1v1h-1zM21 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1zM27 10h1v1h-1zM0 11h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM9 11h1v1h-1zM12 11h1v1h-1zM15 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM0 12h1v1h-1zM1 12h1v1h-1zM2 12h1v1h-1zM3 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM16 12h1v1h-1zM17 12h1v1h-1zM18 12h1v1h-1zM20 12h1v1h-1zM23 12h1v1h-1zM25 12h1v1h-1zM26 12h1v1h-1zM27 12h1v1h-1zM28 12h1v1h-1zM0 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM12 13h1v1h-1zM19 13h1v1h-1zM21 13h1v1h-1zM22 13h1v1h-1zM24 13h1v1h-1zM28 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM7 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM16 14h1v1h-1zM17 14h1v1h-1zM21 14h1v1h-1zM25 14h1v1h-1zM27 14h1v1h-1zM0 15h1v1h-1zM3 15h1v1h-1zM5 15h1v1h-1zM9 15h1v1h-1zM10 15h1v1h-1zM12 15h1v1h-1zM15 15h1v1h-1zM18 15h1v1h-1zM19 15h1v1h-1zM20 15h1v1h-1zM22 15h1v1h-1zM24 15h1v1h-1zM25 15h1v1h-1zM27 15h1v1h-1zM0 16h1v1h-1zM1 16h1v1h-1zM2 16h1v1h-1zM3 16h1v1h-1zM4 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM7 16h1v1h-1zM8 16h1v1h-1zM9 16h1v1h-1zM13 16h1v1h-1zM15 16h1v1h-1zM16 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM21 16h1v1h-1zM26 16h1v1h-1zM27 16h1v1h-1zM28 16h1v1h-1zM0 17h1v1h-1zM4 17h1v1h-1zM8 17h1v1h-1zM10 17h1v1h-1zM12 17h1v1h-1zM14 17h1v1h-1zM17 17h1v1h-1zM19 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM24 17h1v1h-1zM28 17h1v1h-1zM0 18h1v1h-1zM3 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM15 18h1v1h-1zM18 18h1v1h-1zM24 18h1v1h-1zM25 18h1v1h-1zM0 19h1v1h-1zM3 19h1v1h-1zM4 19h1v1h-1zM7 19h1v1h-1zM8 19h1v1h-1zM9 19h1v1h-1zM18 19h1v1h-1zM19 19h1v1h-1zM21 19h1v1h-1zM27 19h1v1h-1zM0 20h1v1h-1zM3 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM10 20h1v1h-1zM13 20h1v1h-1zM14 20h1v1h-1zM15 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM21 20h1v1h-1zM22 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM25 20h1v1h-1zM26 20h1v1h-1zM27 20h1v1h-1zM8 21h1v1h-1zM9 21h1v1h-1zM11 21h1v1h-1zM16 21h1v1h-1zM19 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM28 21h1v1h-1zM0 22h1v1h-1zM1 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM5 22h1v1h-1zM6 22h1v1h-1zM10 22h1v1h-1zM12 22h1v1h-1zM14 22h1v1h-1zM15 22h1v1h-1zM17 22h1v1h-1zM18 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM26 22h1v1h-1zM27 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM10 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM15 23h1v1h-1zM18 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM25 23h1v1h-1zM27 23h1v1h-1zM28 23h1v1h-1zM0 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM8 24h1v1h-1zM9 24h1v1h-1zM16 24h1v1h-1zM17 24h1v1h-1zM18 24h1v1h-1zM20 24h1v1h-1zM21 24h1v1h-1zM22 24h1v1h-1zM23 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM27 24h1v1h-1zM28 24h1v1h-1zM0 25h1v1h-1zM2 25h1v1h-1zM3 25h1v1h-1zM4 25h1v1h-1zM6 25h1v1h-1zM8 25h1v1h-1zM9 25h1v1h-1zM10 25h1v1h-1zM11 25h1v1h-1zM13 25h1v1h-1zM17 25h1v1h-1zM19 25h1v1h-1zM23 25h1v1h-1zM27 25h1v1h-1zM28 25h1v1h-1zM0 26h1v1h-1zM2 26h1v1h-1zM3 26h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM14 26h1v1h-1zM15 26h1v1h-1zM16 26h1v1h-1zM18 26h1v1h-1zM19 26h1v1h-1zM21 26h1v1h-1zM22 26h1v1h-1zM24 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM27 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM9 27h1v1h-1zM10 27h1v1h-1zM11 27h1v1h-1zM12 27h1v1h-1zM15 27h1v1h-1zM16 27h1v1h-1zM19 27h1v1h-1zM20 27h1v1h-1zM21 27h1v1h-1zM27 27h1v1h-1zM0 28h1v1h-1zM1 28h1v1h-1zM2 28h1v1h-1zM3 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM9 28h1v1h-1zM10 28h1v1h-1zM12 28h1v1h-1zM13 28h1v1h-1zM14 28h1v1h-1zM15 28h1v1h-1zM17 28h1v1h-1zM24 28h1v1h-1zM25 28h1v1h-1zM26 28h1v1h-1z";
+    let flow = null, credit = null, depMsg = "", depBusy = false, syncStep = 0;
+    try { flow = JSON.parse(localStorage.getItem(FLOW_KEY) || "null"); credit = JSON.parse(localStorage.getItem(CREDIT_KEY) || "null"); } catch { flow = null; credit = null; }
+    function usedTxs() { try { return JSON.parse(localStorage.getItem(USED_KEY) || "[]"); } catch { return []; } }
+    function saveFlow() { if (flow) localStorage.setItem(FLOW_KEY, JSON.stringify(flow)); else localStorage.removeItem(FLOW_KEY); }
+    async function rpc(method, params) {
+      let lastErr = null;
+      for (const url of RPCS) {
+        try {
+          const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+          const j = await r.json();
+          if (j.error) throw new Error(j.error.message);
+          return j.result;
+        } catch (e) { lastErr = e; }
+      }
+      throw lastErr || new Error("network");
+    }
+    // Checks the BSC chain that this tx moved USDT (BEP20) to our address.
+    async function checkDeposit(hash) {
+      const rec = await rpc("eth_getTransactionReceipt", [hash]);
+      if (!rec) return { ok: false, msg: "Transaction not found yet. Wait a minute and try again." };
+      if (rec.status !== "0x1") return { ok: false, msg: "That transaction failed on-chain." };
+      const want = "0x" + "0".repeat(24) + DEPOSIT_ADDRESS.slice(2).toLowerCase();
+      const log = (rec.logs || []).find((l) => l.address.toLowerCase() === USDT_BSC && l.topics && l.topics[0] === TRANSFER_TOPIC && l.topics[2] && l.topics[2].toLowerCase() === want);
+      if (!log) return { ok: false, msg: "No USDT (BEP20) transfer to the ARC bot address was found in that transaction." };
+      const amount = Number(BigInt(log.data) / 10n ** 12n) / 1e6;
+      const head = BigInt(await rpc("eth_blockNumber", []));
+      const conf = Number(head - BigInt(rec.blockNumber)) + 1;
+      if (amount < MIN_DEPOSIT) return { ok: false, msg: "Found " + amount.toFixed(2) + " USDT. The minimum is " + MIN_DEPOSIT + " USDT." };
+      if (conf < MIN_CONFIRMS) return { ok: false, msg: "Deposit seen (" + amount.toFixed(2) + " USDT) with " + conf + "/" + MIN_CONFIRMS + " confirmations. Try again shortly." };
+      return { ok: true, amount, hash };
+    }
+    let error = "";
+    let copied = false;
+    let confirmCut = false;
+
+    function specOf(id) { return SYMBOLS.find((s) => s.id === id) || SYMBOLS[0]; }
+    function mulberry(seed) {
+      let a = seed >>> 0;
+      return {
+        next() {
+          a |= 0; a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        },
+        state() { return a >>> 0; }
+      };
+    }
+    function gauss(rng) {
+      let u = 0, v = 0;
+      while (u === 0) u = rng.next();
+      while (v === 0) v = rng.next();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(Math.PI * 2 * v);
+    }
+    function roundPx(v, d) { const f = 10 ** d; return Math.round(v * f) / f; }
+    function mean(xs) { let s = 0; for (const x of xs) s += x; return s / xs.length; }
+    function stdev(xs) {
+      if (xs.length < 2) return 0;
+      const m = mean(xs); let v = 0;
+      for (const x of xs) v += (x - m) ** 2;
+      return Math.sqrt(v / (xs.length - 1));
+    }
+    function dayKey(t) {
+      return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+    }
+    function when(t) {
+      return new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(t);
+    }
+    function usd(n) { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n); }
+    function pct(n) { return Math.round(n * 100) + "%"; }
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => {
+        if (c === "&") return "&" + "amp;";
+        if (c === "<") return "&" + "lt;";
+        if (c === ">") return "&" + "gt;";
+        if (c === '"') return "&" + "quot;";
+        return "&" + "#39;";
+      });
+    }
+    function features(bars) {
+      if (bars.length < 52) return null;
+      const c = bars.map((b) => b.c);
+      const last = c.length - 1;
+      const ret = (n) => (c[last] - c[last - n]) / c[last - n];
+      const sma = (n) => mean(c.slice(last - n + 1, last + 1));
+      const deltas = [];
+      for (let i = last - 13; i <= last; i++) deltas.push(c[i] - c[i - 1]);
+      const gain = mean(deltas.map((d) => (d > 0 ? d : 0)));
+      const loss = mean(deltas.map((d) => (d < 0 ? -d : 0)));
+      const rsi = 100 - 100 / (1 + gain / (loss + 1e-12));
+      const trs = [];
+      for (let i = last - 13; i <= last; i++) {
+        const b = bars[i];
+        trs.push(Math.max(b.h - b.l, Math.abs(b.h - c[i - 1]), Math.abs(b.l - c[i - 1])));
+      }
+      const rets = [];
+      for (let i = last - 19; i <= last; i++) rets.push((c[i] - c[i - 1]) / c[i - 1]);
+      return { ret5: ret(5), smaRatio: sma(10) / sma(50), rsi, atr: mean(trs), vol: stdev(rets), hour: new Date(bars[last].t).getUTCHours() };
+    }
+    function probability(f) {
+      const mom = Math.tanh(f.ret5 / (f.vol * Math.sqrt(5) + 1e-8));
+      const trend = Math.tanh((f.smaRatio - 1) / 0.004);
+      const fade = f.rsi > 78 ? -0.45 : f.rsi < 22 ? 0.45 : 0;
+      const sessionBias = f.hour >= 7 && f.hour <= 16 ? 0.06 : -0.04;
+      const logit = 1.05 * mom + 0.72 * trend + 0.22 * ((f.rsi - 50) / 55) + fade + sessionBias;
+      return 1 / (1 + Math.exp(-logit));
+    }
+    function pnlAt(pos, price, spec) {
+      const diff = pos.side === "buy" ? price - pos.entry : pos.entry - price;
+      return (diff / spec.tickSize) * spec.tickValue * pos.lots;
+    }
+    function nextBar(prev, spec, rng, t) {
+      const hour = new Date(t).getUTCHours();
+      const boost = hour >= 7 && hour <= 16 ? 1.12 : 0.72;
+      const c = roundPx(Math.max(prev.c + (spec.start - prev.c) * 0.02 + gauss(rng) * spec.vol * boost, spec.tickSize * 10), spec.digits);
+      const wick = Math.abs(gauss(rng)) * spec.vol * 0.55 * boost;
+      return { t, o: prev.c, h: roundPx(Math.max(prev.c, c) + wick, spec.digits), l: roundPx(Math.min(prev.c, c) - wick, spec.digits), c };
+    }
+    function note(s, t, text) {
+      s.notes.unshift({ id: s.nextId++, t, text });
+      s.notes = s.notes.slice(0, 12);
+    }
+    function mark(s, spec) {
+      const last = s.bars[s.bars.length - 1];
+      return s.cash + (s.position ? pnlAt(s.position, last.c, spec) : 0);
+    }
+    function pushEq(s, spec) {
+      const last = s.bars[s.bars.length - 1];
+      s.equityPoints.push({ t: last.t, v: mark(s, spec) });
+      s.equityPoints = s.equityPoints.slice(-220);
+    }
+    function closeAt(s, exit, reason, t, spec) {
+      const pos = s.position;
+      if (!pos) return;
+      const px = roundPx(exit, spec.digits);
+      const pnl = pnlAt(pos, px, spec);
+      s.cash += pnl;
+      s.dayRealized += pnl;
+      s.trades.unshift({ id: s.nextId, side: pos.side, lots: pos.lots, pnl, reason, closedAt: t });
+      s.trades = s.trades.slice(0, 40);
+      s.position = null;
+      const verb = reason === "tp" ? "Target filled" : reason === "sl" ? "Stop filled" : "Flattened";
+      note(s, t, verb + " · " + usd(pnl));
+    }
+    function tryEntry(s, bar, spec) {
+      const f = features(s.bars);
+      if (!f) return;
+      const p = probability(f);
+      const st = s.settings;
+      if (s.dayRealized < -st.maxDailyLoss * s.cash) {
+        if (!s.haltNoted) { s.haltNoted = true; note(s, bar.t, "Day halt. No new tickets."); }
+        return;
+      }
+      const buy = p >= st.minConfidence;
+      const sell = p <= 1 - st.minConfidence;
+      if (!buy && !sell) return;
+      const side = buy ? "buy" : "sell";
+      const slD = Math.max(f.atr * st.slAtr, spec.tickSize * 30);
+      const tpD = Math.max(f.atr * st.tpAtr, spec.tickSize * 30);
+      const entry = roundPx(side === "buy" ? bar.c + spec.spread / 2 : bar.c - spec.spread / 2, spec.digits);
+      const lots = Math.min(50, Math.max(0.01, Math.round((s.cash * st.risk) / ((slD / spec.tickSize) * spec.tickValue) * 100) / 100));
+      s.position = {
+        side, lots, entry,
+        sl: roundPx(side === "buy" ? entry - slD : entry + slD, spec.digits),
+        tp: roundPx(side === "buy" ? entry + tpD : entry - tpD, spec.digits)
+      };
+      note(s, bar.t, (side === "buy" ? "Buy " : "Sell ") + lots.toFixed(2) + " · score " + pct(p));
+    }
+    function step(s) {
+      const spec = specOf(s.settings.symbol);
+      const rng = mulberry(s.rng);
+      const prev = s.bars[s.bars.length - 1];
+      const bar = nextBar(prev, spec, rng, prev.t + BAR);
+      s.rng = rng.state();
+      s.bars.push(bar);
+      s.bars = s.bars.slice(-360);
+      const key = dayKey(bar.t);
+      if (key !== s.dayKey) { s.dayKey = key; s.dayRealized = 0; s.haltNoted = false; }
+      if (s.position) {
+        const pos = s.position;
+        const hitSl = pos.side === "buy" ? bar.l <= pos.sl : bar.h >= pos.sl;
+        const hitTp = pos.side === "buy" ? bar.h >= pos.tp : bar.l <= pos.tp;
+        if (hitSl || hitTp) {
+          let reason = hitSl ? "sl" : "tp";
+          let price = reason === "sl" ? pos.sl : pos.tp;
+          if (hitSl && hitTp && Math.abs(bar.o - pos.tp) < Math.abs(bar.o - pos.sl)) { reason = "tp"; price = pos.tp; }
+          closeAt(s, price, reason, bar.t, spec);
+        }
+      }
+      if (!s.position) tryEntry(s, bar, spec);
+      pushEq(s, spec);
+    }
+    function quiet(s) {
+      const spec = specOf(s.settings.symbol);
+      const rng = mulberry(s.rng);
+      const prev = s.bars[s.bars.length - 1];
+      const bar = nextBar(prev, spec, rng, prev.t + BAR);
+      s.rng = rng.state();
+      s.bars.push(bar);
+      const key = dayKey(bar.t);
+      if (key !== s.dayKey) { s.dayKey = key; s.dayRealized = 0; s.haltNoted = false; }
+      pushEq(s, spec);
+    }
+    function createSession(input) {
+      const spec = specOf(input.symbol);
+      const end = Math.floor(Date.now() / BAR) * BAR;
+      const start = end - 170 * BAR;
+      let seed = 2166136261;
+      const stamp = input.login + "|" + input.server + "|" + input.symbol + "|" + end;
+      for (let i = 0; i < stamp.length; i++) { seed ^= stamp.charCodeAt(i); seed = Math.imul(seed, 16777619); }
+      const s = {
+        login: input.login.trim(), server: input.server.trim(), startBalance: input.balance,
+        settings: { symbol: input.symbol, risk: 0.005, maxDailyLoss: 0.03, minConfidence: 0.6, slAtr: 1.5, tpAtr: 2.5, live: input.live },
+        armed: true, speed: "fast", rng: seed >>> 0,
+        bars: [{ t: start, o: spec.start, h: spec.start, l: spec.start, c: spec.start }],
+        cash: input.balance, position: null, trades: [], dayKey: dayKey(start), dayRealized: 0, haltNoted: false,
+        notes: [], equityPoints: [{ t: start, v: input.balance }], nextId: 1
+      };
+      for (let i = 0; i < 80; i++) quiet(s);
+      for (let i = 0; i < 90; i++) step(s);
+      note(s, s.bars[s.bars.length - 1].t, "Robot armed on the paper book. Tape is simulated.");
+      return s;
+    }
+    function snapshot(s) {
+      const spec = specOf(s.settings.symbol);
+      const last = s.bars[s.bars.length - 1];
+      const f = features(s.bars);
+      const pUp = f ? probability(f) : 0.5;
+      const floating = s.position ? pnlAt(s.position, last.c, spec) : 0;
+      const locked = s.dayRealized < -s.settings.maxDailyLoss * s.cash;
+      const min = s.settings.minConfidence;
+      const call = locked ? "Halted" : pUp >= min ? "Buy" : pUp <= 1 - min ? "Sell" : "Wait";
+      return { spec, last, pUp, floating, equity: s.cash + floating, locked, call };
+    }
+    function scriptText(s) {
+      const st = s.settings;
+      return [
+        "# ARC bot robot settings for account " + s.login + " on " + s.server,
+        "SYMBOL = " + st.symbol,
+        "RISK_PER_TRADE = " + st.risk,
+        "MAX_DAILY_LOSS = " + st.maxDailyLoss,
+        "MIN_CONFIDENCE = " + st.minConfidence,
+        "SL_ATR = " + st.slAtr,
+        "TP_ATR = " + st.tpAtr,
+        "ALLOW_LIVE = " + (st.live ? "True" : "False"),
+        "",
+        "Run this profile only in the MetaTrader terminal that is already logged into " + s.login + ".",
+        "This app does not send orders to the broker."
+      ].join("\n");
+    }
+
+    function save() { if (session) localStorage.setItem(KEY, JSON.stringify(session)); else localStorage.removeItem(KEY); }
+    function armClock() {
+      clearInterval(timer);
+      if (!session || !session.armed) return;
+      timer = setInterval(() => { step(session); save(); render(); }, session.speed === "fast" ? 900 : 3200);
+    }
+
+    function line(points) {
+      if (points.length < 2) return "";
+      const vs = points.map((p) => p.v);
+      const min = Math.min(...vs), max = Math.max(...vs);
+      const span = Math.max(max - min, 1);
+      const d = points.map((p, i) => {
+        const x = (i / (points.length - 1)) * 100;
+        const y = 8 + (1 - (p.v - min) / span) * 84;
+        return (i ? "L" : "M") + x.toFixed(2) + " " + y.toFixed(2);
+      }).join(" ");
+      const up = points[points.length - 1].v >= points[0].v;
+      return '<svg class="chart" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="' + d + '" fill="none" stroke="' + (up ? "var(--up)" : "var(--down)") + '" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>';
+    }
+
+    function render() {
+      const root = document.getElementById("app");
+      if (!session && flow && syncStep > 0) { root.innerHTML = syncHtml(); return; }
+      if (!session && flow) { root.innerHTML = depositHtml(); bindDeposit(); return; }
+      if (!session) { root.innerHTML = linkHtml(); bindLink(); return; }
+      const v = snapshot(session);
+      const cls = v.call === "Buy" ? "up" : v.call === "Wait" ? "muted" : "down";
+      const band = (1 - session.settings.minConfidence) * 100;
+      const wins = session.trades.filter((t) => t.pnl > 0).length;
+      root.innerHTML = `
+        <div class="top"><div class="logo"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f4bff"/><stop offset="1" stop-color="#5b3df5"/></linearGradient></defs><rect width="48" height="48" rx="13" fill="url(#g)"/><path d="M11 33 24 12l13 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 27h14" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg><p class="brand">ARC <i>bot</i></p></div><span class="pill ${session.armed ? "on" : "off"}">${session.armed ? "ARMED" : "PAUSED"}</span></div>
+        <h1 style="font-size:1.1rem;letter-spacing:0">${esc(session.login)} <span class="muted">· ${esc(session.server)}</span></h1>
+        <p class="muted" style="margin:.2rem 0 0">${session.settings.live ? "Live profile" : "Demo profile"} · paper book · not logged into the terminal</p>
+        <section class="card">
+          <div class="row">
+            <div>
+              <p class="mono muted" style="margin:0;font-size:0.75rem">${esc(v.spec.id)} · simulated M15 tape</p>
+              <p class="price">${v.last.c.toFixed(v.spec.digits)}</p>
+              <p class="muted" style="margin:0.25rem 0 0">${when(v.last.t)} SAST</p>
+            </div>
+            <div style="text-align:right">
+              <p class="mono muted" style="margin:0;font-size:0.75rem">Signal</p>
+              <p class="price ${cls}">${v.call}</p>
+              <p class="mono muted" style="margin:0.25rem 0 0">score ${pct(v.pUp)}</p>
+            </div>
+          </div>
+          <div class="track">
+            <div class="band l" style="width:${band}%"></div>
+            <div class="band r" style="width:${band}%"></div>
+            <div class="needle" style="left:${Math.max(0, Math.min(100, v.pUp * 100))}%"></div>
+          </div>
+          <p class="muted">Buys at or above ${pct(session.settings.minConfidence)}. Sells at or below ${pct(1 - session.settings.minConfidence)}. One ticket at a time.</p>
+          ${v.locked ? '<p class="down">Day halt is on. No new ticket until the next Johannesburg session.</p>' : ""}
+        </section>
+        <section class="card hero"><p class="muted" style="margin:0">Account balance</p><p class="big">${usd(v.equity)}</p><span class="chip">${(v.equity - session.startBalance >= 0 ? "+" : "") + usd(v.equity - session.startBalance)} since start</span></section>
+        <div class="tiles">
+          <div class="card"><p class="k">Today</p><p class="v ${session.dayRealized < 0 ? "down" : "up"}">${usd(session.dayRealized)}</p><p class="k">halt ${usd(-session.settings.maxDailyLoss * session.cash)}</p></div>
+          <div class="card"><p class="k">Closed</p><p class="v">${wins}/${session.trades.length}</p><p class="k">${session.trades.length ? pct(wins / session.trades.length) + " wins" : "no fills yet"}</p></div>
+        </div>
+        <section class="card">
+          ${session.position ? `<div class="row"><div><p class="muted" style="margin:0">Open ticket</p><p class="mono" style="margin:0.25rem 0 0">${session.position.side === "buy" ? "Buy" : "Sell"} ${session.position.lots.toFixed(2)}</p><p class="muted mono">in ${session.position.entry.toFixed(v.spec.digits)} · stop ${session.position.sl.toFixed(v.spec.digits)} · target ${session.position.tp.toFixed(v.spec.digits)}</p></div><p class="price ${v.floating >= 0 ? "up" : "down"}" style="font-size:1.25rem">${usd(v.floating)}</p></div>` : `<p class="muted" style="margin:0">Open ticket</p><p>Flat. Waiting for a bar outside the no-trade band.</p>`}
+          <div class="btns">
+            <button class="primary" id="arm" style="width:auto;margin:0">${session.armed ? "Pause" : "Arm"}</button>
+            <button class="ghost" id="flat" ${session.position ? "" : "disabled"}>Flatten</button>
+            <button class="ghost" id="speed">${session.speed === "fast" ? "Fast tape" : "Slow tape"}</button>
+          </div>
+        </section>
+        <section class="card"><h2>Equity curve</h2>${line(session.equityPoints)}</section>
+        <section class="card"><h2>Fills</h2><ul>${session.trades.slice(0, 8).map((t) => `<li><span>${t.side === "buy" ? "Buy" : "Sell"} ${t.lots.toFixed(2)} · ${t.reason === "tp" ? "target" : t.reason === "sl" ? "stop" : "flat"}<br><span class="muted">${when(t.closedAt)}</span></span><strong class="mono ${t.pnl >= 0 ? "up" : "down"}">${usd(t.pnl)}</strong></li>`).join("") || '<li class="muted">No closed tickets yet.</li>'}</ul></section>
+        <section class="card"><h2>Robot log</h2>${session.notes.map((n) => `<p class="note"><span class="mono muted">${when(n.t)}</span> ${esc(n.text)}</p>`).join("")}</section>
+        <section class="card">
+          <h2>Send orders into MetaTrader</h2>
+          <p class="muted">Only the Windows terminal logged into ${esc(session.login)} can send tickets. This app never asks for your password.</p>
+          <button class="ghost" id="copy">${copied ? "Copied" : "Copy profile"}</button>
+          <details style="margin-top:0.75rem"><summary class="muted">Show the profile</summary><pre>${esc(scriptText(session).replace(/\\n/g, "\n"))}</pre></details>
+        </section>
+        <div style="margin-top:1rem">${confirmCut ? `<p class="muted">Remove this account link from the device? Your deposited balance is kept for the next login.</p><button class="primary" id="yes" style="width:auto">Remove</button> <button class="ghost" id="no">Keep</button>` : `<button class="linkish" id="cut">Remove account link</button>`}</div>`;
+      bindDesk();
+    }
+
+
+    function depositHtml() {
+      return `
+        <div class="top"><div class="logo"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f4bff"/><stop offset="1" stop-color="#5b3df5"/></linearGradient></defs><rect width="48" height="48" rx="13" fill="url(#g)"/><path d="M11 33 24 12l13 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 27h14" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg><p class="brand">ARC <i>bot</i></p></div></div>
+        <div class="steps"><b class="on"></b><b class="on"></b><b></b></div>
+        <h1>Fund your bot</h1>
+        <p class="muted">Deposit at least <b style="color:var(--fg)">$${MIN_DEPOSIT} USDT</b> to start. Your deposit becomes the bot's starting balance.</p>
+        <section class="card">
+          <svg class="qr" viewBox="-2 -2 ${QR_N + 4} ${QR_N + 4}" shape-rendering="crispEdges" role="img" aria-label="Deposit address QR"><rect x="-2" y="-2" width="${QR_N + 4}" height="${QR_N + 4}" fill="#fff"/><path d="${QR_PATH}" fill="#0b1530"/></svg>
+          <div class="kv"><span class="muted">Asset</span><b>USDT</b></div>
+          <div class="kv"><span class="muted">Network</span><b>BNB Smart Chain (BEP20)</b></div>
+          <div class="kv"><span class="muted">Minimum</span><b>$${MIN_DEPOSIT}</b></div>
+          <p class="addr mono">${DEPOSIT_ADDRESS}</p>
+          <div class="btns"><button class="ghost" id="copyaddr">${copied ? "Copied" : "Copy address"}</button></div>
+          <div class="warn">Send only USDT on BSC (BEP20) to this address. Other coins or networks will be lost. Do not send NFTs.</div>
+        </section>
+        <form class="card" id="depform">
+          <h2>I have sent it</h2>
+          <p class="muted" style="margin:.3rem 0 .8rem">Paste the transaction hash (TxID) from your wallet. ARC bot checks it on the BSC chain.</p>
+          <label style="margin:0"><input class="mono" id="txhash" placeholder="0x…" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(draft.tx || "")}" /></label>
+          ${depMsg ? `<p class="${depMsg.startsWith("OK") ? "ok" : "err"}" style="margin:.7rem 0 0">${esc(depMsg)}</p>` : ""}
+          <button class="go" type="submit" ${depBusy ? "disabled" : ""}>${depBusy ? "Checking…" : "Verify deposit"}</button>
+        </form>
+        <div style="margin-top:1rem"><button class="linkish" id="back">Back to log in</button></div>`;
+    }
+    function bindDeposit() {
+      document.getElementById("copyaddr").onclick = () => {
+        try { if (window.ArcNative && ArcNative.copy) ArcNative.copy(DEPOSIT_ADDRESS); else navigator.clipboard.writeText(DEPOSIT_ADDRESS); copied = true; } catch { copied = false; }
+        render(); setTimeout(() => { copied = false; }, 1500);
+      };
+      document.getElementById("back").onclick = () => { flow = null; saveFlow(); render(); };
+      document.getElementById("depform").onsubmit = async (e) => {
+        e.preventDefault();
+        const hash = document.getElementById("txhash").value.trim();
+        draft.tx = hash;
+        if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) { depMsg = "Enter the full transaction hash (0x followed by 64 characters)."; render(); return; }
+        if (usedTxs().includes(hash.toLowerCase())) { depMsg = "That transaction was already used."; render(); return; }
+        depBusy = true; depMsg = ""; render();
+        try {
+          const r = await checkDeposit(hash);
+          if (r.ok) {
+            credit = { amount: r.amount, hash: r.hash, at: Date.now() };
+            localStorage.setItem(CREDIT_KEY, JSON.stringify(credit));
+            localStorage.setItem(USED_KEY, JSON.stringify(usedTxs().concat(hash.toLowerCase())));
+            depBusy = false; startSync(); return;
+          }
+          depMsg = r.msg;
+        } catch (err) { depMsg = "Could not reach the BSC network. Check your connection and try again."; }
+        depBusy = false; render();
+      };
+    }
+    const SYNC_STEPS = ["Deposit confirmed", "Linking MT5 profile", "Loading chart for the chosen asset", "Starting the robot"];
+    function syncHtml() {
+      return `
+        <div class="top"><div class="logo"><p class="brand">ARC <i>bot</i></p></div></div>
+        <div class="steps"><b class="on"></b><b class="on"></b><b class="on"></b></div>
+        <h1>Syncing with MT5</h1>
+        <section class="card"><div class="spin"></div>
+          ${SYNC_STEPS.map((t, i) => `<div class="syncrow"><span class="dot ${i < syncStep ? "on" : ""}"></span><span class="${i < syncStep ? "" : "muted"}">${t}</span></div>`).join("")}
+        </section>`;
+    }
+    function startSync() {
+      syncStep = 1; render();
+      const tick = () => {
+        if (syncStep >= SYNC_STEPS.length) {
+          session = createSession({ login: flow.login, server: flow.server, balance: credit.amount, symbol: flow.symbol, live: flow.live });
+          syncStep = 0; save(); armClock(); render(); return;
+        }
+        setTimeout(() => { syncStep++; render(); tick(); }, 900);
+      };
+      tick();
+    }
+    function linkHtml() {
+      return `
+        <div class="top"><div class="logo"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f4bff"/><stop offset="1" stop-color="#5b3df5"/></linearGradient></defs><rect width="48" height="48" rx="13" fill="url(#g)"/><path d="M11 33 24 12l13 21" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 27h14" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg><p class="brand">ARC <i>bot</i></p></div></div>
+        <div class="steps"><b class="on"></b><b></b><b></b></div>
+        <h1>Log in to ARC bot</h1>
+        <p class="muted">Enter your MT5 account details and pick the asset to watch. Next you will fund the bot, then it syncs with your MT5 profile.</p>
+        <form class="card" id="form">
+          <label><span>Account number</span><input class="mono" id="login" inputmode="numeric" placeholder="50123478" value="${esc(draft.login)}" /></label>
+          <label><span>Server</span><input id="server" placeholder="BrokerName-Demo" value="${esc(draft.server)}" /></label>
+          <p class="lbl">Symbol</p>
+          <div class="grid">${SYMBOLS.map((s) => `<button type="button" class="sym ${draft.symbol === s.id ? "on" : ""}" data-sym="${s.id}"><b class="mono">${s.id}</b><small>${s.label}</small></button>`).join("")}</div>
+          <label class="check"><input type="checkbox" id="live" ${draft.live ? "checked" : ""} /><span><b style="color:var(--fg)">This is a live account</b><span class="muted">Leave this off for a demo. The app still paper-trades either way.</span></span></label>
+          ${error ? `<p class="err">${esc(error)}</p>` : ""}
+          <button class="go" type="submit">Continue</button>
+          <p class="muted">Your password stays inside MetaTrader. This app cannot place broker tickets.</p>
+        </form>`;
+    }
+    function readDraft() {
+      draft.login = document.getElementById("login").value.replace(/\D/g, "").slice(0, 12);
+      draft.server = document.getElementById("server").value;
+      draft.live = document.getElementById("live").checked;
+    }
+    function bindLink() {
+      document.querySelectorAll("[data-sym]").forEach((btn) => btn.onclick = () => { readDraft(); draft.symbol = btn.dataset.sym; render(); });
+      document.getElementById("form").onsubmit = (e) => {
+        e.preventDefault();
+        readDraft();
+        if (!/^\d{4,12}$/.test(draft.login.trim())) error = "Account number should be 4 to 12 digits.";
+        else if (draft.server.trim().length < 3) error = "Enter the server name shown in MetaTrader.";
+        else {
+          error = "";
+          flow = { login: draft.login.trim(), server: draft.server.trim(), symbol: draft.symbol, live: draft.live };
+          saveFlow(); depMsg = "";
+          if (credit) startSync();
+        }
+        render();
+      };
+    }
+    function bindDesk() {
+      document.getElementById("arm").onclick = () => { session.armed = !session.armed; save(); armClock(); render(); };
+      document.getElementById("flat").onclick = () => {
+        if (!session.position) return;
+        const spec = specOf(session.settings.symbol);
+        const last = session.bars[session.bars.length - 1];
+        const exit = session.position.side === "buy" ? last.c - spec.spread / 2 : last.c + spec.spread / 2;
+        closeAt(session, exit, "flat", last.t, spec);
+        pushEq(session, spec);
+        save(); render();
+      };
+      document.getElementById("speed").onclick = () => { session.speed = session.speed === "fast" ? "desk" : "fast"; save(); armClock(); render(); };
+      document.getElementById("copy").onclick = async () => {
+        const txt = scriptText(session).replace(/\\n/g, "\n"); try { if (window.ArcNative && ArcNative.copy) { ArcNative.copy(txt); copied = true; } else { await navigator.clipboard.writeText(txt); copied = true; } } catch { copied = false; }
+        render();
+      };
+      const cut = document.getElementById("cut");
+      if (cut) cut.onclick = () => { confirmCut = true; render(); };
+      const yes = document.getElementById("yes");
+      if (yes) yes.onclick = () => { session = null; flow = null; saveFlow(); confirmCut = false; copied = false; save(); armClock(); render(); };
+      const no = document.getElementById("no");
+      if (no) no.onclick = () => { confirmCut = false; render(); };
+    }
+
+    try { session = JSON.parse(localStorage.getItem(KEY) || "null"); if (!session || !session.bars) session = null; } catch { session = null; }
+    armClock();
+    render();
+  </script>
+</body>
+</html>
